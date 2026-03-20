@@ -2,16 +2,31 @@
 
 from __future__ import annotations
 
-import importlib.util
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
-_ROOT = Path(__file__).resolve().parents[2]
-_OP_ROOT = Path(__file__).resolve().parents[3]
+_ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from VectorSpace_Engine import (  # noqa: E402
+try:
+    import VectorSpace_Engine as _vse  # type: ignore  # noqa: F401
+except ModuleNotFoundError:
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "VectorSpace_Engine",
+        _ROOT / "__init__.py",
+        submodule_search_locations=[str(_ROOT)],
+    )
+    if spec is None or spec.loader is None:
+        raise RuntimeError("failed to bootstrap VectorSpace_Engine module")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["VectorSpace_Engine"] = module
+    spec.loader.exec_module(module)
+
+from VectorSpace_Engine import (  # noqa: E402,F401
     EngineStepResult,
     from_convergence_dynamics,
     from_semiconductor_observation,
@@ -21,25 +36,105 @@ from VectorSpace_Engine import (  # noqa: E402
 )
 
 
-def _load_module(name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"failed to load module: {path}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
+@dataclass
+class MethodDynamics:
+    method_name: str
+    steps: int
+    final_error: float
+    convergence_order: float
+    lyapunov_exponent: float
+    efficiency_bits_per_iter: float
+    predicted_steps_to_target: int
+    stability: str
+
+
+@dataclass
+class GradientResult:
+    point: tuple[float, float, float]
+    vector: tuple[float, float, float]
+
+    @property
+    def magnitude(self) -> float:
+        x, y, z = self.vector
+        return float((x * x + y * y + z * z) ** 0.5)
+
+
+@dataclass
+class DivergenceResult:
+    point: tuple[float, float, float]
+    value: float
+
+
+@dataclass
+class CurlResult:
+    point: tuple[float, float, float]
+    vector: tuple[float, float, float]
+
+    @property
+    def magnitude(self) -> float:
+        x, y, z = self.vector
+        return float((x * x + y * y + z * z) ** 0.5)
+
+
+@dataclass
+class LaplacianResult:
+    point: tuple[float, float, float]
+    value: float
+
+
+@dataclass
+class WaveSnapshot:
+    t: float
+    x: list[float]
+    y: list[float]
+
+    @property
+    def y_max(self) -> float:
+        return max(abs(v) for v in self.y) if self.y else 0.0
+
+    @property
+    def y_rms(self) -> float:
+        if not self.y:
+            return 0.0
+        return (sum(v * v for v in self.y) / len(self.y)) ** 0.5
+
+
+@dataclass
+class SemiconductorObservation:
+    Omega_global: float
+    verdict: str
+    poisson_residual: float
+    current_rms: float
+    entropy_proxy: float
+    stage: str
+
+
+@dataclass
+class EdenGap:
+    temp_gap_C: float
+    gpp_gap: float
+    hab_band_deficit: int
+    ice_band_excess: int
+    mutation_excess: float
+    uv_gap: float
+    co2_gap_pct: float
+    overall_gap: float
+
+
+@dataclass
+class TerraformingPlan:
+    eden_gap: EdenGap
+    interventions: tuple[object, ...]
+    phases: tuple[object, ...]
+    domain_feasibility: dict[str, float]
+    overall_feasibility: float
+    feasibility_label: str
+    total_duration_yr: int
+    summary: str
 
 
 def test_convergence_dynamics_adapter_maps_core_metrics():
-    models = _load_module(
-        "cmp02_models",
-        _OP_ROOT
-        / "40_SPATIAL_LAYER"
-        / "ConvergenceDynamics_Engine"
-        / "models.py",
-    )
-    dynamics = models.MethodDynamics(
+    dynamics = MethodDynamics(
         method_name="newton",
         steps=8,
         final_error=1e-4,
@@ -57,17 +152,10 @@ def test_convergence_dynamics_adapter_maps_core_metrics():
 
 
 def test_vector_calculus_adapter_aggregates_field_metrics():
-    models = _load_module(
-        "cmp07_models",
-        _OP_ROOT
-        / "30_CORTEX_LAYER"
-        / "VectorCalculus_Engine"
-        / "models.py",
-    )
-    gradient = models.GradientResult((0.0, 0.0, 0.0), (3.0, 4.0, 0.0))
-    divergence = models.DivergenceResult((0.0, 0.0, 0.0), 0.25)
-    curl = models.CurlResult((0.0, 0.0, 0.0), (0.0, 0.0, 2.0))
-    laplacian = models.LaplacianResult((0.0, 0.0, 0.0), -0.5)
+    gradient = GradientResult((0.0, 0.0, 0.0), (3.0, 4.0, 0.0))
+    divergence = DivergenceResult((0.0, 0.0, 0.0), 0.25)
+    curl = CurlResult((0.0, 0.0, 0.0), (0.0, 0.0, 2.0))
+    laplacian = LaplacianResult((0.0, 0.0, 0.0), -0.5)
     step = from_vector_calculus(
         gradient=gradient,
         divergence=divergence,
@@ -81,14 +169,7 @@ def test_vector_calculus_adapter_aggregates_field_metrics():
 
 
 def test_wave_snapshot_adapter_maps_energy_and_field_intensity():
-    models = _load_module(
-        "cmp10_models",
-        _OP_ROOT
-        / "40_SPATIAL_LAYER"
-        / "WaveEquation_Engine"
-        / "models.py",
-    )
-    snapshot = models.WaveSnapshot(
+    snapshot = WaveSnapshot(
         t=0.2,
         x=[0.0, 0.5, 1.0],
         y=[0.0, 1.0, 0.0],
@@ -100,14 +181,7 @@ def test_wave_snapshot_adapter_maps_energy_and_field_intensity():
 
 
 def test_semiconductor_observation_adapter_maps_observer_output():
-    models = _load_module(
-        "cmp15_models",
-        _OP_ROOT
-        / "40_SPATIAL_LAYER"
-        / "SemiconductorPhysics_Eval_Engine"
-        / "models.py",
-    )
-    obs = models.SemiconductorObservation(
+    obs = SemiconductorObservation(
         Omega_global=0.73,
         verdict="STABLE",
         poisson_residual=0.15,
@@ -122,14 +196,7 @@ def test_semiconductor_observation_adapter_maps_observer_output():
 
 
 def test_terraforming_plan_adapter_maps_control_risk():
-    terra = _load_module(
-        "cmp18_terra",
-        _OP_ROOT
-        / "40_SPATIAL_LAYER"
-        / "planetary_intervention_engine"
-        / "terra_core.py",
-    )
-    gap = terra.EdenGap(
+    gap = EdenGap(
         temp_gap_C=1.5,
         gpp_gap=0.2,
         hab_band_deficit=1,
@@ -139,7 +206,7 @@ def test_terraforming_plan_adapter_maps_control_risk():
         co2_gap_pct=0.1,
         overall_gap=0.35,
     )
-    plan = terra.TerraformingPlan(
+    plan = TerraformingPlan(
         eden_gap=gap,
         interventions=(),
         phases=(),

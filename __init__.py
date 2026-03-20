@@ -1,9 +1,8 @@
 """
-VectorSpace_Engine — 운영 수학 OS용 벡터공간 계산기 (독립 모듈).
+VectorSpace_Engine — 벡터공간/상태공간 계산기 (독립 모듈).
 
-- CMP 01~20 과 별개: **GlobalSystemVector** 스냅샷 + R^n 연산 + Ω 병합.
-- 정본: ``2_operational/30_CORTEX_LAYER/VectorSpace_Engine/``
-- 허브: ``1_calculator/21_VectorSpace`` (심볼릭 링크)
+- **GlobalSystemVector** 스냅샷 + R^n 연산 + Ω 병합 제공.
+- 외부 엔진 없이 단독 테스트 가능한 패키지 지향.
 """
 
 from .vector_space_calculator import VectorSpaceCalculator
