@@ -54,6 +54,8 @@ steps = (
 gsv = calc.merge_engine_steps(gsv, steps, engine_weights={"cmp02": 1.5, "cmp10": 1.0})
 ```
 
+`merge_engine_steps()`의 `omega`는 엔진별 `observation["omega"]`를 `engine_weights`로 가중 평균해 계산하며, 수치 observation 항목은 `fields`에 `engine_id.key` 형태로 누적 기록한다.
+
 ## 범용 선형대수 API
 
 - 행렬: `shape`, `transpose`, `eye`, `mat_add`, `mat_scale`, `matmul`, `matvec`
@@ -98,6 +100,8 @@ gsv = calc.merge_engine_steps(gsv, steps, engine_weights={"cmp02": 1.5, "cmp10":
 ## 통합 레이어 흐름 계산기
 
 `IntegratedMathPipeline` 는 수학 레이어 흐름을 아래 순서로 압축해 1-step 판정을 만든다.
+
+현재 `run_step()`은 CMP 구간별 점수 집계와 상태 projection 중심의 1-step 통합기이며, 모든 도메인 상태를 직접 진화시키는 full runtime dynamics는 후속 확장 대상으로 둔다.
 
 - `01~05` 수렴 코어
 - `06~12` 장/파동
@@ -165,6 +169,13 @@ gsv = pipe.run_engine_steps(
 ## Verdict
 
 `Verdict` 문자열의 **최종 부여**는 Observer/Runtime 층에서 하는 것을 권장한다. 수학 엔진은 `observation`·`omega` 기여만 한다.
+`GlobalSystemVectorV0.verdict`는 상위 Runtime/Observer가 채우는 최종 판정 슬롯이며, `VectorSpace_Engine`은 기본적으로 이 값을 직접 확정하지 않고 전달/보조한다.
+
+## GlobalSystemVectorV0 필드 의미
+
+- `fields`: 엔진에서 올라온 장/보조 스칼라(예: `cmp10.wave_energy`)를 평탄화 저장하는 런타임 필드 맵.
+- `meta`: 통합 모드, 누적 컨텍스트, 도메인 부가정보를 담는 확장 메타데이터 슬롯.
+- `history_ptr`: 외부 시계열 저장소(로그/타임라인/리플레이 버퍼)와 연결하기 위한 포인터 슬롯.
 
 ## 확장 관점
 
@@ -227,3 +238,4 @@ gsv = pipe.run_engine_steps(gsv, steps)
 ## 버전
 
 - `GlobalSystemVectorV0.schema_version` — 현재 기본 `"0.1"`.
+- `schema_version`은 직렬화/교환 계약 버전이며, 하위 호환 여부 판단과 마이그레이션 분기 기준으로 사용한다.
