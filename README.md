@@ -73,6 +73,12 @@ pytest
 - `PHAM_BLOCKCHAIN_LOG.md`
 - `SIGNATURE.sha256`
 
+기여도 원칙:
+
+- GNJz(Qquarts)는 이 레포에서 자신에게만 적용되는 자발적 기여도 상한을 **최대 6%**로 둔다.
+- GNJz(Qquarts)는 그 어떤 상황에서도 자신의 기여도를 **6%를 넘기지 않는다**.
+- 이 원칙은 상용화, 재배포, 파생 사용 여부와 무관하게 PHAM 문서에 고정된다.
+
 ## 핵심 개념
 
 ### 1. GlobalSystemVectorV0
