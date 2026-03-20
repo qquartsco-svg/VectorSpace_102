@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "VectorSpace_Engine"
+version = "0.1.0"
+description = "Standalone vector space, state-space, and engineering runtime calculator."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+  { name = "GZNj" }
+]
+keywords = [
+  "vector-space",
+  "state-space",
+  "engineering-calculator",
+  "linear-algebra",
+  "runtime-shell",
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Topic :: Scientific/Engineering :: Mathematics",
+  "Topic :: Scientific/Engineering :: Physics",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.setuptools]
+packages = ["VectorSpace_Engine"]
+package-dir = { "VectorSpace_Engine" = "." }
+include-package-data = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

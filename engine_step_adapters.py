@@ -121,6 +121,51 @@ def from_terraforming_plan(plan) -> EngineStepResult:
     )
 
 
+def from_connectome_observation(observation) -> EngineStepResult:
+    """
+    Connectome_Layer(CMP16/17) 관측 요약을 EngineStepResult로 변환.
+
+    기대 입력(속성 기반):
+      - n_nodes: int
+      - n_edges: int
+      - mean_weight: float
+      - verdict: str (예: OK/EMPTY/...)
+    """
+    n_nodes = float(getattr(observation, "n_nodes", 0.0) or 0.0)
+    n_edges = float(getattr(observation, "n_edges", 0.0) or 0.0)
+    mean_weight = float(getattr(observation, "mean_weight", 0.0) or 0.0)
+    verdict = str(getattr(observation, "verdict", "OK") or "OK").upper()
+
+    # 그래프 부하를 간단한 희소도 기반으로 정의 (밀집일수록 낮은 부하)
+    # density ~= n_edges / (n_nodes*(n_nodes-1)) for directed graph
+    max_edges = n_nodes * (n_nodes - 1.0)
+    density = (n_edges / max_edges) if max_edges > 0 else 0.0
+    density = min(1.0, max(0.0, density))
+    graph_load = 1.0 - density
+
+    # 관측 verdict를 안정도 힌트로 사용하되, 구조량(mean_weight/density)도 반영
+    base = {"OK": 0.85, "EMPTY": 0.35}.get(verdict, 0.60)
+    omega = max(0.0, min(1.0, 0.5 * base + 0.3 * density + 0.2 * min(1.0, abs(mean_weight))))
+
+    return EngineStepResult(
+        engine_id="cmp16",
+        state={
+            "n_nodes": n_nodes,
+            "n_edges": n_edges,
+        },
+        derived={
+            "graph_density": density,
+            "mean_weight": mean_weight,
+        },
+        observation={
+            "omega": omega,
+            "graph_load": graph_load,
+            "connectivity_health": omega,
+            "mean_weight": mean_weight,
+        },
+    )
+
+
 def _stability_to_omega(stability: str) -> float:
     table = {
         "SUPERLINEAR": 0.95,

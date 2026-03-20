@@ -8,6 +8,31 @@
 - 본 모듈은 **독립 실행 가능한 상태 벡터 스냅샷 + 공간 계산기**다.
 - 필요하면 상위 시스템(CMP/Observer/Runtime)에서 어댑터 계층으로 연결해 사용할 수 있다.
 
+## 독립 패키지 사용
+
+이 폴더만 별도 레포 루트로 두면 standalone package 로 바로 배포할 수 있다.
+
+```bash
+pip install .
+```
+
+설치 후:
+
+```python
+from VectorSpace_Engine import (
+    VectorSpaceCalculator,
+    IntegratedMathPipeline,
+    GlobalSystemVectorV0,
+)
+```
+
+개발/테스트:
+
+```bash
+pip install -e ".[dev]"
+pytest
+```
+
 ## 사용 예
 
 ```python
@@ -203,6 +228,7 @@ gsv = pipe.run_engine_steps(
 - `from_convergence_dynamics(...)` → CMP02
 - `from_vector_calculus(...)` → CMP07
 - `from_wave_snapshot(...)` → CMP10
+- `from_connectome_observation(...)` → CMP16
 - `from_semiconductor_observation(...)` → CMP15
 - `from_terraforming_plan(...)` → CMP18
 
@@ -239,3 +265,4 @@ gsv = pipe.run_engine_steps(gsv, steps)
 
 - `GlobalSystemVectorV0.schema_version` — 현재 기본 `"0.1"`.
 - `schema_version`은 직렬화/교환 계약 버전이며, 하위 호환 여부 판단과 마이그레이션 분기 기준으로 사용한다.
+- 패키지 버전 — `0.1.0`

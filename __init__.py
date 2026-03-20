@@ -42,6 +42,7 @@ from .linear_algebra import (
     transpose,
 )
 from .engine_step_adapters import (
+    from_connectome_observation,
     from_convergence_dynamics,
     from_semiconductor_observation,
     from_terraforming_plan,
@@ -95,6 +96,7 @@ __all__ = [
     "is_linearly_independent",
     "basis",
     "gram_schmidt",
+    "from_connectome_observation",
     "from_convergence_dynamics",
     "from_vector_calculus",
     "from_wave_snapshot",

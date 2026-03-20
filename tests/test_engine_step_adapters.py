@@ -28,6 +28,7 @@ except ModuleNotFoundError:
 
 from VectorSpace_Engine import (  # noqa: E402,F401
     EngineStepResult,
+    from_connectome_observation,
     from_convergence_dynamics,
     from_semiconductor_observation,
     from_terraforming_plan,
@@ -133,6 +134,14 @@ class TerraformingPlan:
     summary: str
 
 
+@dataclass
+class ConnectomeObservation:
+    n_nodes: int
+    n_edges: int
+    mean_weight: float
+    verdict: str = "OK"
+
+
 def test_convergence_dynamics_adapter_maps_core_metrics():
     dynamics = MethodDynamics(
         method_name="newton",
@@ -220,3 +229,17 @@ def test_terraforming_plan_adapter_maps_control_risk():
     assert step.engine_id == "cmp18"
     assert step.observation["omega"] == 0.72
     assert step.observation["control_risk"] == 0.35
+
+
+def test_connectome_observation_adapter_maps_graph_metrics():
+    obs = ConnectomeObservation(
+        n_nodes=4,
+        n_edges=4,
+        mean_weight=0.6,
+        verdict="OK",
+    )
+    step = from_connectome_observation(obs)
+    assert step.engine_id == "cmp16"
+    assert 0.0 <= step.observation["omega"] <= 1.0
+    assert "graph_load" in step.observation
+    assert "connectivity_health" in step.observation
