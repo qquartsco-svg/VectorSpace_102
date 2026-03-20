@@ -33,6 +33,11 @@ pip install -e ".[dev]"
 pytest
 ```
 
+블록체인/무결성 문서:
+
+- `BLOCKCHAIN_INFO.md`
+- `PHAM_BLOCKCHAIN_LOG.md`
+- `SIGNATURE.sha256`
 ## 사용 예
 
 ```python
